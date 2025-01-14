@@ -35,7 +35,94 @@ class ActivityInfoProvider {
         val formattedInfo = formatActivityInfo(activityInfo)
         return "Device: $deviceName\nADB Path: $adbPath\n\n$formattedInfo"
     }
+    fun getSSLocalProcessInfo(): String {
+        val result = StringBuilder()
 
+        // 获取信息A
+        val psCommand = if (System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")) {
+            "$adbPath shell ps -A | findstr libss-local.so"
+        } else {
+            "$adbPath shell ps -A | grep libss-local.so"
+        }
+        val psOutput = runCommand(psCommand)
+
+        result.append("A. libss-local.so processes:\n")
+        result.append(psOutput.trim())
+        result.append("\n\n")
+
+        // 正确提取第二列作为PID
+        val pids = psOutput.lines().mapNotNull { line ->
+            line.trim().split("\\s+".toRegex()).getOrNull(1)
+        }
+
+        result.append("Command lines for each process:\n")
+        for ((index, pid) in pids.withIndex()) {
+            val cmdlineCommand = "$adbPath shell cat /proc/$pid/cmdline"
+            val cmdlineOutput = runCommand(cmdlineCommand).replace("\u0000", " ").trim()
+            result.append("PID $pid:\n")
+            result.append(formatCommandLine(cmdlineOutput))
+            if (index < pids.size - 1) {
+                result.append("\n" + "-".repeat(50) + "\n")  // 添加分割线
+            }
+        }
+
+        return result.toString()
+    }
+    private fun formatCommandLine(cmdline: String): String {
+        val parts = cmdline.split(" ")
+        val formatted = StringBuilder()
+
+        formatted.append("  Command: ${parts[0]}\n\n")
+
+        val arguments = mutableListOf<String>()
+        val serverInfo = mutableListOf<String>()
+        val downloadInfo = mutableListOf<String>()
+        val additionalSettings = mutableListOf<String>()
+
+        var i = 1
+        while (i < parts.size) {
+            when {
+                parts[i].startsWith("--si-") -> {
+                    serverInfo.add("${parts[i]} ${parts.getOrElse(i+1) {""}}")
+                    i += 2
+                }
+                parts[i].startsWith("--dl-") -> {
+                    downloadInfo.add("${parts[i]} ${parts.getOrElse(i+1) {""}}")
+                    i += 2
+                }
+                parts[i].startsWith("--") -> {
+                    if (parts[i] == "--uid") {
+                        additionalSettings.add("${parts[i]} [长字符串，已省略]")
+                        i += 2
+                    } else {
+                        additionalSettings.add("${parts[i]} ${parts.getOrElse(i+1) {""}}")
+                        i += 2
+                    }
+                }
+                else -> {
+                    arguments.add("${parts[i]} ${parts.getOrElse(i+1) {""}}")
+                    i += 2
+                }
+            }
+        }
+
+        val labelWidth = 25  // 增加标签宽度
+        val space = "\u2007"  // 使用等宽空格字符
+
+        formatted.append("  ${"Arguments:".padEnd(labelWidth, space.single())}[ ${arguments.joinToString(" ")} ]\n")
+        if (serverInfo.isNotEmpty()) {
+            formatted.append("  ${"Server Info:".padEnd(labelWidth, space.single())}[ ${serverInfo.joinToString(" ")} ]\n")
+        }
+        if (downloadInfo.isNotEmpty()) {
+            formatted.append("  ${"Download Info:".padEnd(labelWidth, space.single())}[ ${downloadInfo.joinToString(" ")} ]\n")
+        }
+        if (additionalSettings.isNotEmpty()) {
+            formatted.append("\n  Additional Settings:\n")
+            additionalSettings.forEach { formatted.append("    $it\n") }
+        }
+
+        return formatted.toString()
+    }
     private fun formatActivityInfo(info: String): String {
         val lines = info.lines()
         val result = StringBuilder()

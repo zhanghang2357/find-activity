@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.xiaohang"
-version = "0.11-SNAPSHOT"
+version = "0.12-SNAPSHOT"
 
 repositories {
     mavenCentral()

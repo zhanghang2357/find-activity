@@ -17,7 +17,14 @@
     Right click to search for activity<br>
     <em>find activity</em>
   ]]></description>
-
+    <change-notes><![CDATA[
+        <h3>Version 0.12</h3>
+        <ul>
+            <li>Added support for displaying SS Local process information</li>
+            <li>Improved UI layout for better readability</li>
+        </ul>
+    ]]>
+    </change-notes>
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
