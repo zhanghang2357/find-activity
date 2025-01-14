@@ -56,17 +56,18 @@ class ActivityInfoProvider {
         }
 
         result.append("Command lines for each process:\n")
-        for ((index, pid) in pids.withIndex()) {
+        pids.forEachIndexed { index, pid ->
+            if (index > 0) {
+                result.append("-".repeat(100) + "\n")  // 只在进程之间添加分割线
+            }
             val cmdlineCommand = "$adbPath shell cat /proc/$pid/cmdline"
             val cmdlineOutput = runCommand(cmdlineCommand).replace("\u0000", " ").trim()
             result.append("PID $pid:\n")
             result.append(formatCommandLine(cmdlineOutput))
-            if (index < pids.size - 1) {
-                result.append("\n" + "-".repeat(50) + "\n")  // 添加分割线
-            }
+            result.append("\n")  // 在每个进程信息后添加一个空行，而不是分隔线
         }
 
-        return result.toString()
+        return result.toString().trimEnd()  // 移除最后可能多余的换行
     }
     private fun formatCommandLine(cmdline: String): String {
         val parts = cmdline.split(" ")
@@ -116,13 +117,15 @@ class ActivityInfoProvider {
         if (downloadInfo.isNotEmpty()) {
             formatted.append("  ${"Download Info:".padEnd(labelWidth, space.single())}[ ${downloadInfo.joinToString(" ")} ]\n")
         }
+
         if (additionalSettings.isNotEmpty()) {
             formatted.append("\n  Additional Settings:\n")
             additionalSettings.forEach { formatted.append("    $it\n") }
         }
-
-        return formatted.toString()
+        return formatted.toString().trimEnd()  // 移除末尾的换行符
     }
+
+
     private fun formatActivityInfo(info: String): String {
         val lines = info.lines()
         val result = StringBuilder()

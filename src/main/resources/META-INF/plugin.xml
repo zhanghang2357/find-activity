@@ -23,6 +23,10 @@
             <li>Added support for displaying SS Local process information</li>
             <li>Improved UI layout for better readability</li>
         </ul>
+         <h3>Version 0.13</h3>
+        <ul>
+            <li>fix:display bugs</li>
+        </ul>
     ]]>
     </change-notes>
     <!-- Product and plugin compatibility requirements.

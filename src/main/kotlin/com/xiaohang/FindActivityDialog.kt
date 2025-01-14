@@ -73,7 +73,7 @@ class FindActivityDialog(private val project: Project, private val initialInfo: 
             }
         } else {
             val titleStyle = doc.addStyle("title", defaultStyle)
-            StyleConstants.setFontSize(titleStyle, 14)
+            StyleConstants.setFontSize(titleStyle, 16)
             StyleConstants.setBold(titleStyle, true)
 
             val pidStyle = doc.addStyle("pid", defaultStyle)
@@ -89,22 +89,23 @@ class FindActivityDialog(private val project: Project, private val initialInfo: 
             StyleConstants.setForeground(separatorStyle, Color.GRAY)
 
             // 处理 SS Local 信息
-            val parts = info.split("\n\n", limit = 3)
+            val parts = info.split("Command lines for each process:", limit = 2)
 
             // 处理 "A. libss-local.so processes:"
-            doc.insertString(doc.length, parts[0] + "\n\n", titleStyle)
+            doc.insertString(doc.length, parts[0], titleStyle)
 
             if (parts.size > 1) {
-                // 处理 "B. Command lines for each process:"
+                // 处理 "Command lines for each process:"
                 doc.insertString(doc.length, "Command lines for each process:\n", titleStyle)
 
-                val processes = parts[2].split("-".repeat(100))
+                val processes = parts[1].split("PID ").filter { it.isNotBlank() }
                 processes.forEachIndexed { index, process ->
-                    val lines = process.trim().lines()
+
+                    doc.insertString(doc.length, "PID ", pidStyle)
+                    val lines = process.lines()
                     lines.forEachIndexed { lineIndex, line ->
                         when {
-                            lineIndex == 0 && line.startsWith("PID") ->
-                                doc.insertString(doc.length, "$line\n", pidStyle)
+                            lineIndex == 0 -> doc.insertString(doc.length, "$line\n", pidStyle)
                             line.startsWith("  Command:") -> {
                                 doc.insertString(doc.length, "  Command:", labelStyle)
                                 doc.insertString(doc.length, line.substringAfter("Command:") + "\n", contentStyle)
@@ -121,9 +122,6 @@ class FindActivityDialog(private val project: Project, private val initialInfo: 
                             else ->
                                 doc.insertString(doc.length, "$line\n", contentStyle)
                         }
-                    }
-                    if (index < processes.size - 1) {
-                        doc.insertString(doc.length, "-".repeat(50) + "\n", separatorStyle)
                     }
                 }
             }
